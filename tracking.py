@@ -57,9 +57,11 @@ class Tracking:
             cv2.circle(frame, center, 5, tuple(255 -
                        item for item in self.tracked_object.color_rgb[::-1]), -1)
 
-    def getDirection(self, frame_width: int, center: tuple):
-
-        return 'right' if center[0] > frame_width // 2 else 'left'
+    def getDirection(self, frame_width: int, center: tuple) -> float:
+        depth_zone = 0.1    #(+-10%) - depth_zone
+        eps = (2.0 * center[0]) / frame_width - 1.0
+        return 0 if -depth_zone <= eps <= depth_zone else eps   # -1.0..1.0
+        #return 'right' if center[0] > frame_width // 2 else 'left'
 
     def main(self):
 
