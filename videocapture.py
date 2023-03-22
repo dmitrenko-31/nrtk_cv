@@ -1,16 +1,15 @@
 import cv2
-import numpy as np
+import time
 
-cam1, cam2 = cv2.VideoCapture(0), cv2.VideoCapture(1)
+cam = cv2.VideoCapture('./resources/example.mp4')
+fps = 20
 
-  
 while True:
-	ret1, frame1 = cam1.read()
-	ret2, frame2 = cam2.read()
-	cv2.imshow('frame', cv2.hconcat([frame1, frame2]))
+	ret, frame = cam.read()
+	cv2.imshow('frame', frame)
+	time.sleep(1.0 / fps - 0.005)
 	if cv2.waitKey(1) & 0xFF == ord('q'):
 		break
 
-cam1.release()
-cam2.release()
+cam.release()
 cv2.destroyAllWindows()
