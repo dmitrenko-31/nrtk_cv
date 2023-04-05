@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from math import hypot
+from typing import Optional
 
 import cv2
 import imutils
@@ -99,29 +101,67 @@ class TrackedQRObject(TrackedObject):
     def __init__(self) -> None:
         super().__init__()
         self.points = None
+        self.valid = False
         self.three_last = [False] * 3
 
     def findObjectContour(self, frame: np.ndarray) -> bool:
         detector = cv2.QRCodeDetector()
-        ret, self.points = detector.detect(frame)
-        if ret:
-            pass
-        return ret
+        try:
+            self.true_size, self.points, _ = detector.detectAndDecode(frame)
+        except:
+            print('ERROR - QR detect error')
+
+        self.center = None
+        if self.points is not None:
+            self.center = [
+                (int(self.points[0][0][0] + self.points[0][2][0])) // 2,
+                (int(self.points[0][0][1] + self.points[0][2][1])) // 2,
+            ]
+        self.check_valid()
+        return self.points is not None
+
+    def get_pixels_size(self) -> Optional[list[float]]:
+        if not self.valid:
+            return None
+
+        return [
+            hypot(self.points[0][1][0] - self.points[0][0][0],
+                  self.points[0][1][1] - self.points[0][0][1]),
+            hypot(self.points[0][2][0] - self.points[0][1][0],
+                  self.points[0][2][1] - self.points[0][1][1]),
+        ]
+
+    def get_distance(self) -> Optional[float]:
+        if not self.valid or self.true_size == '':
+            return None
+
+        return 1000 * (float(self.true_size) - 15) / sum(self.get_pixels_size())
 
     def drawObjectContour(self, frame: np.ndarray) -> None:
-        if self.points is None:
+        if not self.valid:
             return
         frame = cv2.polylines(
             frame, self.points.astype(int), True, (0, 255, 0), 3)
+        cv2.circle(frame, self.center, 5, (0, 255, 0), -1)
 
     def getObjectPosition(self) -> list[int, int]:
         return super().getObjectPosition()
 
     def getDirection(self, frame_width):
-        return super().getDirection(frame_width)
+        if self.center is None:
+            return 's'
+        eps = (2.0 * self.center[0]) / frame_width - 1.0
+        if -self.depth_zone <= eps <= self.depth_zone:   # -1.0..1.0
+            d = self.get_distance()
+            if d is not None and d > 1000:
+                return 'f'
+            else:
+                return 's'
+        else:
+            return 'l' if eps < 0 else 'r'
 
-    # def check_valid(self) -> None:
-    #     if len(self.three_last) > 2:
-    #         self.three_last = self.three_last[-2:]
-    #     self.three_last.append(bool(self.center))
-    #     return self.three_last == [True, True, True]
+    def check_valid(self) -> None:
+        if len(self.three_last) > 2:
+            self.three_last = self.three_last[1:]
+        self.three_last.append(bool(self.center))
+        self.valid = self.three_last == [True] * 3
