@@ -2,8 +2,8 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/aruco.hpp>
 
-#include "../include/logic.h"
-#include "../include/config.h"
+#include "logic.h"
+#include "config.h"
 
 int main(int, char **)
 {

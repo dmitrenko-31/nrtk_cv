@@ -39,7 +39,7 @@ class TrackedObject(ABC):
         eps = (2.0 * self.center[0]) / frame_width - 1.0
 
         if -self.dead_zone <= eps <= self.dead_zone:
-            distance = self.get_distance(self.points[0], frame_width / 720)
+            distance = self.get_distance(self.points, frame_width / 720)
             if distance is not None and distance > self.start_distance:
                 return "F"
             else:
@@ -218,6 +218,7 @@ class TrackedArucoObject(TrackedObject):
                 (int(self.points[0][0][0][0] + self.points[0][0][2][0])) // 2,
                 (int(self.points[0][0][0][1] + self.points[0][0][2][1])) // 2,
             ]
+            self.points = self.points[0] # FIXME need test
         self.check_valid()
         return self.points is not None
 

@@ -3,7 +3,7 @@
 #include <cmath>
 #include <opencv2/core/types.hpp>
 
-#include "../include/config.h"
+#include "config.h"
 
 float find_position(std::vector<std::vector<cv::Point2f>> &corners)
 {
