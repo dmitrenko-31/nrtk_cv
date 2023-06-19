@@ -19,8 +19,12 @@ class Tracking:
         cam.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
         
         # Set 1080 resolution
-        cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-        cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        # cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+        # cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        
+        # Set 720 resolution
+        cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
 
         while True:
             ret, frame = cam.read()
@@ -29,14 +33,17 @@ class Tracking:
             # then we have reached the end of the video
             # if not ret or frame is None:
             #     break
-            ret = self.tracked_object.findObjectContour(frame)
             if ret:
-                self.tracked_object.drawObjectContour(frame)
-
-            cv2.imshow('Tracking', frame)
-            command = self.tracked_object.getDirection(frame.shape[1])
-            #ret = self.sender.send_command(command)
-            # print(f'Sending command "{command}" ---> {ret}')
+                find_ret = self.tracked_object.findObjectContour(frame)
+                command = self.tracked_object.getDirection(frame.shape[1])
+                
+                if find_ret:
+                    self.tracked_object.drawObjectContour(frame)
+                self.tracked_object.print_info(frame)
+                cv2.imshow('Tracking', frame)
+                
+                #ret = self.sender.send_command(command)
+                # print(f'Sending command "{command}" ---> {ret}')
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break

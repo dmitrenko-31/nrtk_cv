@@ -3,7 +3,7 @@ from serial import Serial
 
 class Sender:
 
-    def __init__(self, bd_rate: int = 9600, usb_port: str = '/dev/ttyACM0', timeout: int = 1) -> None:
+    def __init__(self, bd_rate: int = 115200, usb_port: str = '/dev/ttyACM0', timeout: int = 1) -> None:
         self.boud_rate = bd_rate
         self.usb_port = usb_port
         self.timeout = timeout
@@ -21,3 +21,8 @@ class Sender:
         except:
             return False
 
+
+if __name__ == "__main__":
+    sender = Sender()
+    sender.open_connect()
+    

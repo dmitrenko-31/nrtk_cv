@@ -9,12 +9,14 @@ import numpy as np
 
 class TrackedObject(ABC):
     def __init__(
-        self, dead_zone=0.1, start_distance=2000, marker_true_size=150
+        self, dead_zone=0.1, start_distance=1000, marker_true_size=150
     ) -> None:
         self.x = None
         self.y = None
         self.center = None
         self.points = None
+        self.distance = None
+        self.direction = None
         
         self.valid = False
         self.three_last = [False] * 3
@@ -31,27 +33,26 @@ class TrackedObject(ABC):
     def drawObjectContour(self, frame: np.ndarray) -> None:
         pass
 
-    @abstractmethod
     def getObjectPosition(self) -> list[int, int]:
         return self.center
 
-    @abstractmethod
     def getDirection(self, frame_width) -> str:
+        self.direction = 'S'
         if self.center is None:
-            return "S"
-        eps = (2.0 * self.center[0]) / frame_width - 1.0
-
-        if -self.dead_zone <= eps <= self.dead_zone:
-            distance = self.get_distance(self.points, frame_width / 720)
-            if distance is not None and distance > self.start_distance:
-                return "F"
-            else:
-                return "S"
+            self.direction = 'S'
+            self.distance = 0
         else:
-            return "L" if eps < 0 else "R"
+            eps = (2.0 * self.center[0]) / frame_width - 1.0
+            distance = self.get_distance(self.points, frame_width / 720)
+            if -self.dead_zone <= eps <= self.dead_zone:
+                if self.distance is not None and self.distance > self.start_distance:
+                    self.direction = 'F'
+            else:
+                self.direction = 'L' if eps < 0 else "R"
+        return self.direction
 
-    @abstractmethod
     def get_distance(self, points, distance_coefficient) -> int:
+        self.distance = 0
         if points is not None and len(points) > 0:
             marker_size = hypot(
                 points[0][1][0] - points[0][0][0],
@@ -60,11 +61,13 @@ class TrackedObject(ABC):
                 points[0][2][0] - points[0][1][0],
                 points[0][2][1] - points[0][1][1],
             )
-
-            return distance_coefficient * 1000.0 * self.marker_true_size / marker_size
-
-        else:
-            return 0
+            self.distance = distance_coefficient * 1000.0 * self.marker_true_size / marker_size
+        return self.distance
+    
+    def print_info(self, frame) -> None:
+        cv2.putText(frame, f'distance: {self.distance}', (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 204, 0), 2)
+        cv2.putText(frame, f'direction: {self.direction}', (0, 100), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 204, 0), 2)
+        
 
 
 class TrackedColorObject(TrackedObject):
@@ -139,6 +142,9 @@ class TrackedColorObject(TrackedObject):
 
     def getDirection(self, frame_width):
         return super().getDirection(frame_width)
+    
+    def print_info(self, frame) -> None:
+        return super().print_info(frame)
 
 
 class TrackedQRObject(TrackedObject):
@@ -175,6 +181,9 @@ class TrackedQRObject(TrackedObject):
                 self.points[0][2][1] - self.points[0][1][1],
             ),
         ]
+        
+    def get_distance(self, points, distance_coefficient) -> int:
+        return super().get_distance(points, distance_coefficient)
 
     def drawObjectContour(self, frame: np.ndarray) -> None:
         if not self.valid:
@@ -193,6 +202,10 @@ class TrackedQRObject(TrackedObject):
             self.three_last = self.three_last[1:]
         self.three_last.append(bool(self.center))
         self.valid = self.three_last == [True] * 3
+    
+    def print_info(self, frame) -> None:
+        return super().print_info(frame)
+    
 
 
 class TrackedArucoObject(TrackedObject):
@@ -214,7 +227,6 @@ class TrackedArucoObject(TrackedObject):
                 (int(self.points[0][0][0][0] + self.points[0][0][2][0])) // 2,
                 (int(self.points[0][0][0][1] + self.points[0][0][2][1])) // 2,
             ]
-            self.points = self.points[0] # FIXME need test
         self.check_valid()
         return self.points is not None
 
@@ -238,4 +250,7 @@ class TrackedArucoObject(TrackedObject):
         self.valid = self.three_last == [True] * 3
 
     def get_distance(self, points, distance_coefficient) -> int:
-        return super().get_distance(points, distance_coefficient)
+        return super().get_distance(points[0], distance_coefficient)
+    
+    def print_info(self, frame) -> None:
+        return super().print_info(frame)
