@@ -15,6 +15,9 @@ class TrackedObject(ABC):
         self.y = None
         self.center = None
         self.points = None
+        
+        self.valid = False
+        self.three_last = [False] * 3
 
         self.dead_zone = dead_zone
         self.start_distance = start_distance
@@ -141,9 +144,6 @@ class TrackedColorObject(TrackedObject):
 class TrackedQRObject(TrackedObject):
     def __init__(self) -> None:
         super().__init__()
-        self.points = None
-        self.valid = False
-        self.three_last = [False] * 3
         self.detector = cv2.QRCodeDetector()
 
     def findObjectContour(self, frame: np.ndarray) -> bool:
@@ -198,10 +198,6 @@ class TrackedQRObject(TrackedObject):
 class TrackedArucoObject(TrackedObject):
     def __init__(self) -> None:
         super().__init__()
-        self.points = None
-        self.valid = False
-        self.three_last = [False] * 3
-
         dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_250)
         parameters = cv2.aruco.DetectorParameters()
         self.detector = cv2.aruco.ArucoDetector(dictionary, parameters)
