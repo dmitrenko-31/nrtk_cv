@@ -6,10 +6,15 @@ import cv2
 import imutils
 import numpy as np
 
+import config
+
 
 class TrackedObject(ABC):
     def __init__(
-        self, dead_zone=0.1, start_distance=1000, marker_true_size=150
+        self,
+        dead_zone=config.DEAD_ZONE,
+        start_distance=config.START_DISTANCE,
+        marker_true_size=config.MARKER_TRUE_SIZE,
     ) -> None:
         self.x = None
         self.y = None
@@ -17,9 +22,9 @@ class TrackedObject(ABC):
         self.points = None
         self.distance = None
         self.direction = None
-        
+
         self.valid = False
-        self.three_last = [False] * 3
+        self.last_frames = [False] * config.VALID_FRAME_COUNT
 
         self.dead_zone = dead_zone
         self.start_distance = start_distance
@@ -37,18 +42,18 @@ class TrackedObject(ABC):
         return self.center
 
     def getDirection(self, frame_width) -> str:
-        self.direction = 'S'
+        self.direction = "S"
         if self.center is None:
-            self.direction = 'S'
+            self.direction = "S"
             self.distance = 0
         else:
             eps = (2.0 * self.center[0]) / frame_width - 1.0
             distance = self.get_distance(self.points, frame_width / 720)
             if -self.dead_zone <= eps <= self.dead_zone:
                 if self.distance is not None and self.distance > self.start_distance:
-                    self.direction = 'F'
+                    self.direction = "F"
             else:
-                self.direction = 'L' if eps < 0 else "R"
+                self.direction = "L" if eps < 0 else "R"
         return self.direction
 
     def get_distance(self, points, distance_coefficient) -> int:
@@ -61,13 +66,36 @@ class TrackedObject(ABC):
                 points[0][2][0] - points[0][1][0],
                 points[0][2][1] - points[0][1][1],
             )
-            self.distance = distance_coefficient * 1000.0 * self.marker_true_size / marker_size
+            self.distance = (
+                distance_coefficient * 1000.0 * self.marker_true_size / marker_size
+            )
         return self.distance
+
+    def check_valid(self) -> None:
+        if len(self.last_frames) > config.VALID_FRAME_COUNT - 1:
+            self.last_frames = self.last_frames[1:]
+        self.last_frames.append(bool(self.center))
+        self.valid = self.last_frames == [True] * config.VALID_FRAME_COUNT
     
     def print_info(self, frame) -> None:
-        cv2.putText(frame, f'distance: {self.distance}', (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 204, 0), 2)
-        cv2.putText(frame, f'direction: {self.direction}', (0, 100), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 204, 0), 2)
-        
+        cv2.putText(
+            frame,
+            f"distance: {self.distance}",
+            (0, 50),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            config.FONT_SIZE,
+            config.FONT_COLOR,
+            config.FONT_THICKNESS,
+        )
+        cv2.putText(
+            frame,
+            f"direction: {self.direction}",
+            (0, 100),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            config.FONT_SIZE,
+            config.FONT_COLOR,
+            config.FONT_THICKNESS,
+        )
 
 
 class TrackedColorObject(TrackedObject):
@@ -142,7 +170,7 @@ class TrackedColorObject(TrackedObject):
 
     def getDirection(self, frame_width):
         return super().getDirection(frame_width)
-    
+
     def print_info(self, frame) -> None:
         return super().print_info(frame)
 
@@ -181,15 +209,15 @@ class TrackedQRObject(TrackedObject):
                 self.points[0][2][1] - self.points[0][1][1],
             ),
         ]
-        
+
     def get_distance(self, points, distance_coefficient) -> int:
         return super().get_distance(points, distance_coefficient)
 
     def drawObjectContour(self, frame: np.ndarray) -> None:
         if not self.valid:
             return
-        frame = cv2.polylines(frame, self.points.astype(int), True, (0, 255, 0), 3)
-        cv2.circle(frame, self.center, 5, (0, 255, 0), -1)
+        frame = cv2.polylines(frame, self.points.astype(int), True, config.CONTOUR_COLOR, 3)
+        cv2.circle(frame, self.center, 5, config.CONTOUR_COLOR, -1)
 
     def getObjectPosition(self) -> list[int, int]:
         return super().getObjectPosition()
@@ -198,20 +226,16 @@ class TrackedQRObject(TrackedObject):
         return super().getDirection(frame_width)
 
     def check_valid(self) -> None:
-        if len(self.three_last) > 2:
-            self.three_last = self.three_last[1:]
-        self.three_last.append(bool(self.center))
-        self.valid = self.three_last == [True] * 3
-    
+        return super().check_valid()
+
     def print_info(self, frame) -> None:
         return super().print_info(frame)
-    
 
 
 class TrackedArucoObject(TrackedObject):
     def __init__(self) -> None:
         super().__init__()
-        dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_250)
+        dictionary = cv2.aruco.getPredefinedDictionary(config.ARUCO_TYPE)
         parameters = cv2.aruco.DetectorParameters()
         self.detector = cv2.aruco.ArucoDetector(dictionary, parameters)
 
@@ -235,7 +259,7 @@ class TrackedArucoObject(TrackedObject):
             return
 
         frame = cv2.aruco.drawDetectedMarkers(frame, self.points, self.ids)
-        cv2.circle(frame, self.center, 2, (0, 255, 0), -1)
+        cv2.circle(frame, self.center, 2, config.CONTOUR_COLOR, -1)
 
     def getDirection(self, frame_width) -> str:
         return super().getDirection(frame_width)
@@ -244,13 +268,10 @@ class TrackedArucoObject(TrackedObject):
         return super().getObjectPosition()
 
     def check_valid(self) -> None:
-        if len(self.three_last) > 2:
-            self.three_last = self.three_last[1:]
-        self.three_last.append(bool(self.center))
-        self.valid = self.three_last == [True] * 3
+        return super().check_valid()
 
     def get_distance(self, points, distance_coefficient) -> int:
         return super().get_distance(points[0], distance_coefficient)
-    
+
     def print_info(self, frame) -> None:
         return super().print_info(frame)
