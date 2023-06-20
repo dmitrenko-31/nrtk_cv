@@ -1,9 +1,11 @@
 import time
 
 import cv2
+import config
 
 from tracked_object import TrackedArucoObject
 from data_sender import Sender
+from video_capture import UsbVideoCapture
 
 
 class Tracking:
@@ -14,17 +16,7 @@ class Tracking:
         self.tracked_object = TrackedArucoObject()
 
     def tracking(self):
-        cam = cv2.VideoCapture(0, cv2.CAP_V4L2)
-
-        cam.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-        
-        # Set 1080 resolution
-        # cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-        # cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-        
-        # Set 720 resolution
-        cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        cam = UsbVideoCapture()
 
         while True:
             ret, frame = cam.read()
