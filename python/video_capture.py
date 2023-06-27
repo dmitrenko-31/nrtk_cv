@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
+
+import config
 import cv2
 import numpy as np
-import config
 
 
 class VideoCapture:
@@ -12,13 +13,17 @@ class VideoCapture:
     def read():
         pass
 
+    @abstractmethod
+    def release():
+        pass
+
 
 class UsbVideoCapture(VideoCapture):
     def __init__(
         self,
-        camera_index = config.CAMERA_INDEX,
-        api = config.PREF_API,
-        video_codec = config.VIDEO_CODEC,
+        camera_index=config.CAMERA_INDEX,
+        api=config.PREF_API,
+        video_codec=config.VIDEO_CODEC,
         resolution=(config.FRAME_HEIGHT, config.FRAME_WIDTH),
     ) -> None:
         self.cap = cv2.VideoCapture(camera_index, api)
@@ -29,6 +34,17 @@ class UsbVideoCapture(VideoCapture):
 
     def read(self):
         return self.cap.read()
-    
+
     def release(self):
         self.cap.release()
+
+
+class RealSenseVideoCapture(VideoCapture):
+    def __init__(self) -> None:
+        pass
+
+    def read():
+        pass
+
+    def release():
+        pass

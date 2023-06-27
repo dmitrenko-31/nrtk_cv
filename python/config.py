@@ -3,6 +3,7 @@ from cv2 import aruco, VideoWriter_fourcc, CAP_V4L2
 START_DISTANCE = 1000  # Расстояние, с которого начинается движение вперед
 MARKER_TRUE_SIZE = 150  # Размер маркера в мм
 DEAD_ZONE = 0.1 # мертвая зона поворота - 10%
+CORRECT_ID = 1
 
 # Разрешение камеры
 FRAME_WIDTH = 1280

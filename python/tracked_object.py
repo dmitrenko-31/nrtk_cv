@@ -23,6 +23,8 @@ class TrackedObject(ABC):
         self.distance = None
         self.direction = None
 
+        self.valid_id = config.CORRECT_ID
+
         self.valid = False
         self.last_frames = [False] * config.VALID_FRAME_COUNT
 
@@ -76,7 +78,7 @@ class TrackedObject(ABC):
             self.last_frames = self.last_frames[1:]
         self.last_frames.append(bool(self.center))
         self.valid = self.last_frames == [True] * config.VALID_FRAME_COUNT
-    
+
     def print_info(self, frame) -> None:
         cv2.putText(
             frame,
@@ -182,7 +184,9 @@ class TrackedQRObject(TrackedObject):
 
     def findObjectContour(self, frame: np.ndarray) -> bool:
         try:
-            self.true_size, self.points, _ = self.detector.detectAndDecode(frame)
+            id, self.points, _ = self.detector.detectAndDecode(frame)
+            if id != self.valid_id:
+                self.points = None
         except:
             print("ERROR - QR detect error")
 
@@ -216,7 +220,9 @@ class TrackedQRObject(TrackedObject):
     def drawObjectContour(self, frame: np.ndarray) -> None:
         if not self.valid:
             return
-        frame = cv2.polylines(frame, self.points.astype(int), True, config.CONTOUR_COLOR, 3)
+        frame = cv2.polylines(
+            frame, self.points.astype(int), True, config.CONTOUR_COLOR, 3
+        )
         cv2.circle(frame, self.center, 5, config.CONTOUR_COLOR, -1)
 
     def getObjectPosition(self) -> list[int, int]:
@@ -241,15 +247,22 @@ class TrackedArucoObject(TrackedObject):
 
     def findObjectContour(self, frame: np.ndarray) -> bool:
         try:
-            self.points, self.ids, _ = self.detector.detectMarkers(frame)
+            self.points, self.id = None, None
+            detected_points, detected_ids, _ = self.detector.detectMarkers(frame)
+            if detected_points is not None and detected_ids is not None:
+                for points, id in zip(detected_points, detected_ids):
+                    if id == self.valid_id:
+                        self.points = points
+                        self.id = id
+                        break
         except:
             print("ERROR - Aruco detect error")
 
         self.center = None
         if self.points is not None and len(self.points) > 0:
             self.center = [
-                (int(self.points[0][0][0][0] + self.points[0][0][2][0])) // 2,
-                (int(self.points[0][0][0][1] + self.points[0][0][2][1])) // 2,
+                (int(self.points[0][0][0] + self.points[0][2][0])) // 2,
+                (int(self.points[0][0][1] + self.points[0][2][1])) // 2,
             ]
         self.check_valid()
         return self.points is not None
@@ -258,7 +271,7 @@ class TrackedArucoObject(TrackedObject):
         if not self.valid:
             return
 
-        frame = cv2.aruco.drawDetectedMarkers(frame, self.points, self.ids)
+        frame = cv2.aruco.drawDetectedMarkers(frame, [self.points], np.ndarray(self.id))
         cv2.circle(frame, self.center, 2, config.CONTOUR_COLOR, -1)
 
     def getDirection(self, frame_width) -> str:
@@ -271,7 +284,7 @@ class TrackedArucoObject(TrackedObject):
         return super().check_valid()
 
     def get_distance(self, points, distance_coefficient) -> int:
-        return super().get_distance(points[0], distance_coefficient)
+        return super().get_distance(points, distance_coefficient)
 
     def print_info(self, frame) -> None:
         return super().print_info(frame)
