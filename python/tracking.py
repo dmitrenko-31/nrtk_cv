@@ -28,14 +28,15 @@ class Tracking:
             if ret:
                 find_ret = self.tracked_object.findObjectContour(frame)
                 command = self.tracked_object.getDirection(frame.shape[1])
-
+                
                 if find_ret:
                     self.tracked_object.drawObjectContour(frame)
+                
                 self.tracked_object.print_info(frame)
                 cv2.imshow("Tracking", frame)
 
-                # ret = self.sender.send_command(command)
-                # print(f'Sending command "{command}" ---> {ret}')
+                ret = self.sender.send_command(command + '\n')
+                print(f'Sending command "{command}" ---> {ret}')
 
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
