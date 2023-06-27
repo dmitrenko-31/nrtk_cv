@@ -5,7 +5,7 @@ import config
 
 from tracked_object import TrackedArucoObject
 from data_sender import Sender
-from video_capture import UsbVideoCapture
+from video_capture import UsbVideoCapture, GoProVideoCapture
 
 
 class Tracking:
@@ -16,8 +16,8 @@ class Tracking:
         self.tracked_object = TrackedArucoObject()
 
     def tracking(self):
-        cam = UsbVideoCapture()
-
+        #cam = UsbVideoCapture()
+        cam = GoProVideoCapture()
         while True:
             ret, frame = cam.read()
 

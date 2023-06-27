@@ -1,9 +1,9 @@
 import requests
-
+import config
 
 class gopro:
-    def __init__(self, serial=tuple('322')) -> None:
-        self.ip = f"http://172.2{serial[0]}.1{serial[1]}{serial[2]}.51:8080".format(serial)
+    def __init__(self) -> None:
+        self.ip = "http://172.2{0}.1{1}{2}.51".format(*config.GOPRO_SERIAL)
 
     def stream_start(self):
         return requests.get(self.ip + "/gopro/camera/stream/start")
@@ -15,5 +15,5 @@ class gopro:
         return requests.get(self.ip + "/gopro/camera/stream/start")
     
 if __name__ == '__main__':
-    go = gopro()
-    go.stream_start()
+    gopro = gopro()
+    gopro.stream_start()

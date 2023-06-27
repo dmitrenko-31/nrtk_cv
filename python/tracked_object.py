@@ -50,7 +50,7 @@ class TrackedObject(ABC):
             self.distance = 0
         else:
             eps = (2.0 * self.center[0]) / frame_width - 1.0
-            distance = self.get_distance(self.points, frame_width / 720)
+            distance = self.get_distance(self.points, frame_width / 720) # TODO Изменить коэффициент, добавить коэффициент камеры
             if -self.dead_zone <= eps <= self.dead_zone:
                 if self.distance is not None and self.distance > self.start_distance:
                     self.direction = "F"
