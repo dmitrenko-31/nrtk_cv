@@ -55,6 +55,7 @@ class RealSenseVideoCapture(VideoCapture):
 
 
 class BufferlessVideoCapture(Thread):
+
     def __init__(self, source, api, video_codec) -> None:
         self.cap = cv2.VideoCapture(source, api)
         self.cap.set(cv2.CAP_PROP_FOURCC, video_codec)

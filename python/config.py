@@ -1,4 +1,5 @@
-from cv2 import aruco, VideoWriter_fourcc, CAP_V4L2, CAP_FFMPEG
+"""Основные параметры системы по умолчанию"""
+from cv2 import aruco, VideoWriter_fourcc, CAP_V4L2, CAP_FFMPEG, FONT_HERSHEY_SIMPLEX
 
 START_DISTANCE = 1000  # Расстояние, с которого начинается движение вперед
 MARKER_TRUE_SIZE = 150  # Размер маркера в мм
@@ -9,9 +10,13 @@ CORRECT_ID = 1
 FRAME_WIDTH = 1280
 FRAME_HEIGHT = 720
 
+# FRAME_WIDTH = 1920
+# FRAME_HEIGHT = 1080
+
 
 
 # Font 
+FONT_STYLE = FONT_HERSHEY_SIMPLEX
 FONT_COLOR = (0, 255, 0)
 FONT_SIZE = 2
 FONT_THICKNESS = 2
